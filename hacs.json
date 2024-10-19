@@ -6,7 +6,7 @@
   ],
   "homeassistant": "2024.10.0",
   "render_readme": true,
-  "iot_class": "local_push",
+  "iot_class": "local_poll",
   "icon": "https://w7.pngwing.com/pngs/808/708/png-transparent-iiyama-hd-logo.png",
   "logo": "https://banner2.cleanpng.com/20181108/xuo/kisspng-logo-lenovo-font-organization-portable-network-gra-outdoor-security-cameras-outlook-cctv-leeds-5be4f3d3bde254.5420931115417312837778.jpg"
 }

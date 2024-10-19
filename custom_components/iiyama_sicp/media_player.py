@@ -66,9 +66,14 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
 
     def update(self):
         """ Update the States"""
-        self._attr_source = self._client.get_input_source()[0]
-        self._attr_volume_level = self._client.get_volume()[0] / 100.0
-        self._attr_state = MediaPlayerState.ON if self._client.get_power_state() else MediaPlayerState.OFF
+        state = self._client.get_power_state()
+        self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
+        if state:
+            source_ = self._client.get_input_source()[0]
+            for k, v in pyamasicp.commands.INPUT_SOURCES.items():
+                if source_ == v:
+                    self._attr_source = k
+            self._attr_volume_level = self._client.get_volume()[0] / 100.0
 
     @property
     def name(self):

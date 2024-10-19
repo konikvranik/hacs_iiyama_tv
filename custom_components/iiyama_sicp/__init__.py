@@ -22,7 +22,7 @@ MANIFEST = json.load(open("%s/manifest.json" % os.path.dirname(os.path.realpath(
 VERSION = MANIFEST["version"]
 DOMAIN = MANIFEST[CONF_DOMAIN]
 DEFAULT_NAME = MANIFEST[CONF_NAME]
-PLATFORM = Platform.MEDIA_PLAYER
+PLATFORMS = [Platform.MEDIA_PLAYER]
 ISSUE_URL = "https://github.com/konikvranik/hacs_iiyama_tv/issues"
 
 SCHEMA = {
@@ -40,10 +40,10 @@ CONFIG_SCHEMA = vol.Schema({vol.Optional(DOMAIN): vol.Schema(SCHEMA)}, extra=ALL
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up ESPHome binary sensors based on a config entry."""
-    await hass.config_entries.async_forward_entry_setups(config_entry, [PLATFORM])
+    await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(config_entry, [PLATFORM])
+    return await hass.config_entries.async_unload_platforms(config_entry, PLATFORMS)

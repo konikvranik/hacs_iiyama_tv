@@ -53,7 +53,7 @@ async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate old entry."""
     data = {**config_entry.data}
-    if not data[CONF_MAC]:
+    if not (CONF_MAC in data and data[CONF_MAC]):
         data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
         hass.config_entries.async_update_entry(config_entry, data=data, minor_version=1, version=1)
     return True

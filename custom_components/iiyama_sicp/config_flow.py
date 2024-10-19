@@ -1,6 +1,7 @@
 """Adds config flow for HDO."""
 import logging
 from collections import OrderedDict
+from typing import Any
 
 import getmac
 import voluptuous as vol
@@ -32,7 +33,6 @@ class HDOFlowHandler(config_entries.ConfigFlow):
         self._errors = {}
         if user_input is not None:
             if user_input[CONF_HOST] != "":
-                # Remember Frequency
                 await self.async_set_unique_id(user_input[CONF_HOST])
                 self._data.update(user_input)
                 for c in [CONF_REFRESH_RATE, CONF_MAC, CONF_PORT, CONF_WOL_TARGET]:
@@ -43,17 +43,23 @@ class HDOFlowHandler(config_entries.ConfigFlow):
                 return self.async_create_entry(title=self._data[CONF_HOST], data=self._data)
             else:
                 self._errors[CONF_BASE] = CONF_HOST.title()
-        return await self._show_user_form(user_input)
+        return await self._show_form("user", user_input)
 
-    async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-        """Migrate old entry."""
-        data = {**config_entry.data}
-        if not data[CONF_MAC]:
-            data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
-            hass.config_entries.async_update_entry(config_entry, data=data, minor_version=1, version=1)
-        return True
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        if user_input is not None:
+            if user_input[CONF_HOST] != "":
+                await self.async_set_unique_id(user_input[CONF_HOST])
+                self._data.update(user_input)
+                for c in [CONF_REFRESH_RATE, CONF_MAC, CONF_PORT, CONF_WOL_TARGET]:
+                    if c in user_input:
+                        self._data[c] = user_input[c]
 
-    async def _show_user_form(self, user_input):
+                return self.async_update_reload_and_abort(title=self._data[CONF_HOST], data=self._data)
+            else:
+                self._errors[CONF_BASE] = CONF_HOST.title()
+        return await self._show_form("reconfigure", user_input)
+
+    async def _show_form(self, step, user_input):
         """Configure the form."""
         # Defaults
         host = ""
@@ -65,8 +71,16 @@ class HDOFlowHandler(config_entries.ConfigFlow):
         data_schema[vol.Optional(CONF_MAC)] = str
         data_schema[vol.Optional(CONF_PORT)] = int
         data_schema[vol.Optional(CONF_WOL_TARGET)] = str
-        form = self.async_show_form(step_id="user", data_schema=vol.Schema(data_schema), errors=self._errors)
+        form = self.async_show_form(step_id=step, data_schema=vol.Schema(data_schema), errors=self._errors)
         return form
+
+    async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+        """Migrate old entry."""
+        data = {**config_entry.data}
+        if not data[CONF_MAC]:
+            data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
+            hass.config_entries.async_update_entry(config_entry, data=data, minor_version=1, version=1)
+        return True
 
     @staticmethod
     @callback

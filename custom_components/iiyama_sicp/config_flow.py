@@ -2,13 +2,15 @@
 import logging
 from collections import OrderedDict
 
+import getmac
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_CODE, CONF_NAME, CONF_FORCE_UPDATE, CONF_HOST, CONF_BASE, \
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_NAME, CONF_HOST, CONF_BASE, \
     CONF_MAC, CONF_PORT
-from homeassistant.core import callback
+from homeassistant.core import callback, HomeAssistant
 
-from . import DOMAIN, DEFAULT_NAME, CONF_REFRESH_RATE, CONF_MAX_COUNT, VERSION, CONF_WOL_TARGET
+from . import DOMAIN, DEFAULT_NAME, CONF_REFRESH_RATE, VERSION, CONF_WOL_TARGET
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,6 +44,14 @@ class HDOFlowHandler(config_entries.ConfigFlow):
             else:
                 self._errors[CONF_BASE] = CONF_HOST.title()
         return await self._show_user_form(user_input)
+
+    async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+        """Migrate old entry."""
+        data = {**config_entry.data}
+        if not data[CONF_MAC]:
+            data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
+            hass.config_entries.async_update_entry(config_entry, data=data, minor_version=1, version=1)
+        return True
 
     async def _show_user_form(self, user_input):
         """Configure the form."""

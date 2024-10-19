@@ -3,13 +3,11 @@ import logging
 from collections import OrderedDict
 from typing import Any
 
-import getmac
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_HOST, CONF_BASE, \
     CONF_MAC, CONF_PORT
-from homeassistant.core import callback, HomeAssistant
+from homeassistant.core import callback
 
 from . import DOMAIN, DEFAULT_NAME, CONF_REFRESH_RATE, VERSION, CONF_WOL_TARGET
 
@@ -73,14 +71,6 @@ class HDOFlowHandler(config_entries.ConfigFlow):
         data_schema[vol.Optional(CONF_WOL_TARGET)] = str
         form = self.async_show_form(step_id=step, data_schema=vol.Schema(data_schema), errors=self._errors)
         return form
-
-    async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-        """Migrate old entry."""
-        data = {**config_entry.data}
-        if not data[CONF_MAC]:
-            data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
-            hass.config_entries.async_update_entry(config_entry, data=data, minor_version=1, version=1)
-        return True
 
     @staticmethod
     @callback

@@ -52,25 +52,11 @@ class HDOFlowHandler(config_entries.ConfigFlow):
         data_schema = OrderedDict()
         data_schema[vol.Required(CONF_HOST, default=host)] = str
         data_schema[vol.Optional(CONF_NAME, default=DEFAULT_NAME)] = str
-        data_schema[vol.Optional(CONF_FORCE_UPDATE, default=True)] = bool
-        data_schema[vol.Optional(CONF_REFRESH_RATE, default=86400)] = int
         data_schema[vol.Optional(CONF_MAC)] = str
         data_schema[vol.Optional(CONF_PORT)] = int
         data_schema[vol.Optional(CONF_WOL_TARGET)] = str
-        data_schema[vol.Optional(CONF_MAX_COUNT, default=5)] = int
         form = self.async_show_form(step_id="user", data_schema=vol.Schema(data_schema), errors=self._errors)
         return form
-
-    async def async_step_import(self, user_input):  # pylint: disable=unused-argument
-        """Import a config entry.
-
-        Special type of import, we're not actually going to store any data.
-        Instead, we're going to rely on the values that are in config file.
-        """
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
-
-        return self.async_create_entry(title="configuration.yaml", data={})
 
     @staticmethod
     @callback
@@ -97,10 +83,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             # Update entry
             self._data.update(user_input)
-            self._data[CONF_CODE] = self.config_entry.unique_id
-            if CONF_REFRESH_RATE in user_input:
-                self._data[CONF_REFRESH_RATE] = user_input[CONF_REFRESH_RATE]
-            return self.async_create_entry(title=self._data[CONF_CODE], data=self._data)
+            return self.async_create_entry(title=self._data[CONF_NAME], data=self._data)
         else:
             return await self._show_init_form(user_input)
 
@@ -111,12 +94,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         data_schema = OrderedDict()
         data_schema[
             vol.Optional(CONF_NAME, default=user_input[CONF_NAME] if CONF_NAME in user_input else DEFAULT_NAME)] = str
-        data_schema[vol.Optional(CONF_FORCE_UPDATE, default=user_input[
-            CONF_FORCE_UPDATE] if CONF_FORCE_UPDATE in user_input else True)] = bool
-        data_schema[vol.Optional(CONF_REFRESH_RATE, default=user_input[
-            CONF_REFRESH_RATE] if CONF_REFRESH_RATE in user_input else 86400)] = int
-        data_schema[vol.Optional(CONF_MAX_COUNT,
-                                 default=user_input[CONF_MAX_COUNT] if CONF_MAX_COUNT in user_input else 5)] = int
+        data_schema[vol.Optional(CONF_HOST, default=user_input[CONF_HOST] if CONF_HOST in user_input else None)] = str
+        data_schema[vol.Optional(CONF_PORT, default=user_input[CONF_PORT] if CONF_PORT in user_input else 5000)] = int
+        data_schema[vol.Optional(CONF_MAC, default=user_input[CONF_MAC] if CONF_MAC in user_input else None)] = str
+        data_schema[vol.Optional(CONF_WOL_TARGET,
+                                 default=user_input[CONF_WOL_TARGET] if CONF_WOL_TARGET in user_input else None)] = str
         return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema), errors=self._errors)
 
 

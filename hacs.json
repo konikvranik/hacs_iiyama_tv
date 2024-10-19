@@ -5,6 +5,9 @@
     "media_player"
   ],
   "homeassistant": "2024.10.0",
+  "requirements": [
+    "pyamasicp>=0.1.10"
+  ],
   "render_readme": true,
   "iot_class": "local_poll",
   "icon": "https://w7.pngwing.com/pngs/808/708/png-transparent-iiyama-hd-logo.png",

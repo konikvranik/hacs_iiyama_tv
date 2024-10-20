@@ -44,6 +44,9 @@ class HDOFlowHandler(config_entries.ConfigFlow):
         return await self._show_form("user", user_input)
 
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        config_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
         if user_input is not None:
             if user_input[CONF_HOST] != "":
                 await self.async_set_unique_id(user_input[CONF_HOST])
@@ -52,7 +55,7 @@ class HDOFlowHandler(config_entries.ConfigFlow):
                     if c in user_input:
                         self._data[c] = user_input[c]
 
-                return self.async_update_reload_and_abort(title=self._data[CONF_HOST], data=self._data)
+                return self.async_update_reload_and_abort(config_entry, title=self._data[CONF_HOST], data=self._data)
             else:
                 self._errors[CONF_BASE] = CONF_HOST.title()
         return await self._show_form("reconfigure", user_input)

@@ -1,8 +1,5 @@
 {
 	"name": "iiyama TV rs232 over LAN remote control",
-	"domains": [
-		"media_player"
-	],
 	"country": [
 		"CZ"
 	],

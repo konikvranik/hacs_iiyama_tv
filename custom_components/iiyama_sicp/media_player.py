@@ -1,6 +1,7 @@
 """ mqtt-mediaplayer """
 import logging
 import uuid
+from datetime import timedelta
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -18,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import pyamasicp.commands
 from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN
 
+SCAN_INTERVAL = timedelta(seconds=15)
 _LOGGER = logging.getLogger(__name__)
 _VALID_STATES = [
     MediaPlayerState.ON,
@@ -110,20 +112,20 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
 
     def set_volume_level(self, volume):
         """Set volume level."""
+        self._client.set_volume(output_volume=int(volume * 100))
         self._attr_volume_level = volume
-        self._client.set_volume(output_volume=int(self._attr_volume_level * 100))
 
     def select_source(self, source):
         """Send source select command."""
+        self._client.set_input_source(pyamasicp.commands.INPUT_SOURCES[source])
         self._attr_source = source
-        self._client.set_input_source(pyamasicp.commands.INPUT_SOURCES[self._attr_source])
 
     def turn_off(self):
         """Send turn off command."""
-        self._attr_state = MediaPlayerState.OFF
         self._client.set_power_state(False)
+        self._attr_state = MediaPlayerState.OFF
 
     def turn_on(self):
         """Send turn on command."""
-        self._attr_state = MediaPlayerState.ON
         self._client.set_power_state(True)
+        self._attr_state = MediaPlayerState.ON

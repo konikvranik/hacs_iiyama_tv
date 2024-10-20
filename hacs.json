@@ -4,8 +4,5 @@
 		"CZ"
 	],
 	"homeassistant": "2024.10.0",
-	"requirements": [
-		"pyamasicp>=0.1.11"
-	],
 	"render_readme": true
 }

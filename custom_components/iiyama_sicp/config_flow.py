@@ -8,6 +8,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_NAME, CONF_HOST, CONF_BASE, \
     CONF_MAC, CONF_PORT
 from homeassistant.core import callback
+from voluptuous import UNDEFINED
 
 from . import DOMAIN, DEFAULT_NAME, CONF_REFRESH_RATE, VERSION, CONF_WOL_TARGET
 
@@ -52,10 +53,7 @@ class HDOFlowHandler(config_entries.ConfigFlow):
             data.update(user_input)
 
             if data[CONF_HOST] != "":
-                await self.async_set_unique_id(data[CONF_HOST])
-                for c in [CONF_REFRESH_RATE, CONF_MAC, CONF_PORT, CONF_WOL_TARGET]:
-                    if c in data:
-                        self._data[c] = data[c]
+                # await self.async_set_unique_id(data[CONF_HOST])
                 self._data.update(data)
                 return self.async_update_reload_and_abort(config_entry, title=self._data[CONF_HOST], data=self._data)
             else:
@@ -110,15 +108,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Configure the form."""
         if user_input is None:
             user_input = self.config_entry.data
-        data_schema = OrderedDict()
-        data_schema[
-            vol.Optional(CONF_NAME, default=user_input[CONF_NAME] if CONF_NAME in user_input else DEFAULT_NAME)] = str
-        data_schema[vol.Optional(CONF_HOST, default=user_input[CONF_HOST] if CONF_HOST in user_input else None)] = str
-        data_schema[vol.Optional(CONF_PORT, default=user_input[CONF_PORT] if CONF_PORT in user_input else 5000)] = int
-        data_schema[vol.Optional(CONF_MAC, default=user_input[CONF_MAC] if CONF_MAC in user_input else None)] = str
-        data_schema[vol.Optional(CONF_WOL_TARGET,
-                                 default=user_input[CONF_WOL_TARGET] if CONF_WOL_TARGET in user_input else None)] = str
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema), errors=self._errors)
+        data_schema = vol.Schema(
+            {vol.Optional(CONF_NAME, default=user_input[CONF_NAME] if CONF_NAME in user_input else DEFAULT_NAME): str,
+             vol.Optional(CONF_HOST, default=user_input[CONF_HOST] if CONF_HOST in user_input else UNDEFINED): str,
+             vol.Optional(CONF_PORT, default=user_input[CONF_PORT] if CONF_PORT in user_input else 5000): int,
+             vol.Optional(CONF_MAC, default=user_input[CONF_MAC] if CONF_MAC in user_input else UNDEFINED): str,
+             vol.Optional(CONF_WOL_TARGET,
+                          default=user_input[CONF_WOL_TARGET] if CONF_WOL_TARGET in user_input else UNDEFINED): str})
+        return self.async_show_form(step_id="init", data_schema=data_schema, errors=self._errors)
 
 
 class EmptyOptions(config_entries.OptionsFlow):

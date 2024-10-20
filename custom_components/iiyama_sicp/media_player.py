@@ -1,8 +1,8 @@
 """ mqtt-mediaplayer """
 import logging
+import uuid
 
 import homeassistant.helpers.config_validation as cv
-import pyamasicp.commands
 import voluptuous as vol
 from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity, MediaPlayerEntityFeature, \
     MediaPlayerState
@@ -11,9 +11,12 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_HOST, CONF_MAC, )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from custom_components.iiyama_sicp import CONF_WOL_TARGET
+import pyamasicp.commands
+from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 _VALID_STATES = [
@@ -35,17 +38,21 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry,
                             async_add_entities: AddEntitiesCallback) -> None:
     """Set up ESPHome binary sensors based on a config entry."""
-    config_entry = config_entry.data
-    async_add_entities([(IiyamaSicpMediaPlayer(hass, config_entry.get(CONF_NAME), config_entry.get(CONF_HOST),
-                                               config_entry.get(CONF_MAC), config_entry.get(CONF_WOL_TARGET)))], True)
+    async_add_entities([(IiyamaSicpMediaPlayer(hass, DeviceInfo(name=config_entry.title,
+                                                                identifiers={(DOMAIN, config_entry.entry_id)}),
+                                               config_entry.data.get(CONF_NAME), config_entry.data.get(CONF_HOST),
+                                               config_entry.data.get(CONF_MAC),
+                                               config_entry.data.get(CONF_WOL_TARGET)))], True)
 
 
 class IiyamaSicpMediaPlayer(MediaPlayerEntity):
     """MQTTMediaPlayer"""
 
-    def __init__(self, hass: HomeAssistant, name: str, host: str, mac: str, wol_target: str) -> None:
+    def __init__(self, hass: HomeAssistant, device_info: DeviceInfo, name: str, host: str, mac: str,
+                 wol_target: str) -> None:
         """Initialize"""
 
+        self._attr_device_info = device_info
         _LOGGER.debug("IiyamaSicpMediaPlayer.__init__(%s, %s, %s, %s)" % (name, host, mac, wol_target))
         self.hass = hass
         client = pyamasicp.commands.Client(host, mac=mac, wol_target=wol_target)
@@ -54,6 +61,9 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
             'host: %s:%d, mac: %s, wol_target: %s' % (client._host, client._port, client._mac, client._wol_target))
         self._client = pyamasicp.commands.Commands(client)
         self._name = name
+        self._host = host
+        self._mac = mac
+        self._attr_unique_id = mac if mac else str(uuid.uuid4())
 
         self._attr_supported_features |= MediaPlayerEntityFeature.VOLUME_STEP
         self._attr_supported_features |= MediaPlayerEntityFeature.VOLUME_SET
@@ -61,8 +71,20 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
         self._attr_supported_features |= MediaPlayerEntityFeature.VOLUME_MUTE
         self._attr_supported_features |= MediaPlayerEntityFeature.TURN_OFF
         self._attr_supported_features |= MediaPlayerEntityFeature.TURN_ON
-
         self._attr_source_list = [b.replace(" ", " ") for b in pyamasicp.commands.INPUT_SOURCES.keys()]
+        self._initiated = False
+        self._attr_device_info["manufacturer"] = "Iiyama"
+        self._attr_device_info["identifiers"].add(("mac", self._mac))
+        self._attr_device_info["identifiers"].add(("host", self._host))
+        self._attr_device_info["connections"] = {(dr.CONNECTION_NETWORK_MAC, self._mac), ("host", self._host)}
+
+    def setup_device(self):
+        self._attr_device_info["model_id"] = self._client.get_model_number()
+        self._attr_device_info["model"] = self._attr_device_info["model_id"]
+        self._attr_device_info["hw_version"] = self._client.get_fw_version()
+        self._attr_device_info["sw_model"] = self._client.get_platform_label()
+        self._attr_device_info["sw_version"] = self._client.get_platform_version()
+        self._initiated = True
 
     def update(self):
         """ Update the States"""
@@ -74,6 +96,12 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
                 if source_ == v:
                     self._attr_source = k
             self._attr_volume_level = self._client.get_volume()[0] / 100.0
+        if not self._initiated:
+            try:
+                self.setup_device()
+            except Exception:
+                pass
+        _LOGGER.debug("DeviceInfo: %s", self.device_info)
 
     @property
     def name(self):

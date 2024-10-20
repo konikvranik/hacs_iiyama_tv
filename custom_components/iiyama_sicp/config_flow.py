@@ -48,7 +48,8 @@ class HDOFlowHandler(config_entries.ConfigFlow):
             self.context["entry_id"]
         )
         data = {**config_entry.data}
-        data.update(user_input)
+        if user_input:
+            data.update(user_input)
 
         if data[CONF_HOST] != "":
             await self.async_set_unique_id(data[CONF_HOST])

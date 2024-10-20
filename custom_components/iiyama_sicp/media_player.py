@@ -96,12 +96,12 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
                 if source_ == v:
                     self._attr_source = k
             self._attr_volume_level = self._client.get_volume()[0] / 100.0
-        if not self._initiated:
-            try:
-                self.setup_device()
-            except Exception:
-                pass
-        _LOGGER.debug("DeviceInfo: %s", self.device_info)
+            if not self._initiated:
+                try:
+                    self.setup_device()
+                    _LOGGER.debug("DeviceInfo: %s", self.device_info)
+                except Exception:
+                    pass
 
     @property
     def name(self):

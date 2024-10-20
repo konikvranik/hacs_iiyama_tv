@@ -84,7 +84,6 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
         self._attr_device_info["model_id"] = self._client.get_model_number()
         self._attr_device_info["model"] = self._attr_device_info["model_id"]
         self._attr_device_info["hw_version"] = self._client.get_fw_version()
-        self._attr_device_info["sw_model"] = self._client.get_platform_label()
         self._attr_device_info["sw_version"] = self._client.get_platform_version()
         self._initiated = True
 

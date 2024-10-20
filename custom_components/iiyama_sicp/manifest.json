@@ -7,5 +7,5 @@
     "iot_class": "local_push",
     "issue_tracker": "https://github.com/konikvranik/hacs_iiyama_tv/issues",
     "requirements": ["pyamasicp>=0.2.0"],
-    "version": "0.2.1"
+    "version": "0.2.2"
 }

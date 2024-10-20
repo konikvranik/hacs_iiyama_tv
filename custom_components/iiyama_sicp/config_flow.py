@@ -51,15 +51,15 @@ class HDOFlowHandler(config_entries.ConfigFlow):
         if user_input:
             data.update(user_input)
 
-        if data[CONF_HOST] != "":
-            await self.async_set_unique_id(data[CONF_HOST])
-            for c in [CONF_REFRESH_RATE, CONF_MAC, CONF_PORT, CONF_WOL_TARGET]:
-                if c in data:
-                    self._data[c] = data[c]
-            self._data.update(data)
-            return self.async_update_reload_and_abort(config_entry, title=self._data[CONF_HOST], data=self._data)
-        else:
-            self._errors[CONF_BASE] = CONF_HOST.title()
+            if data[CONF_HOST] != "":
+                await self.async_set_unique_id(data[CONF_HOST])
+                for c in [CONF_REFRESH_RATE, CONF_MAC, CONF_PORT, CONF_WOL_TARGET]:
+                    if c in data:
+                        self._data[c] = data[c]
+                self._data.update(data)
+                return self.async_update_reload_and_abort(config_entry, title=self._data[CONF_HOST], data=self._data)
+            else:
+                self._errors[CONF_BASE] = CONF_HOST.title()
         return await self._show_form("reconfigure", user_input)
 
     async def _show_form(self, step, user_input):

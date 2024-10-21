@@ -11,7 +11,7 @@ from homeassistant.const import (CONF_NAME, CONF_FORCE_UPDATE, CONF_HOST, CONF_M
 from homeassistant.core import HomeAssistant
 from voluptuous import ALLOW_EXTRA
 
-REQUIREMENTS="pyamasicp"
+REQUIREMENTS = "pyamasicp"
 CONF_WOL_TARGET: typing.Final = "wol_target"
 CONF_WOL_PORT: typing.Final = "wol_port"
 CONF_MAX_COUNT = 'maxCount'
@@ -20,7 +20,6 @@ CONF_REFRESH_RATE = 'refreshRate'
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.info('Starting iiyama_sicp')
 
-DEFAULT_VERIFY_SSL = True
 MANIFEST = json.load(open("%s/manifest.json" % os.path.dirname(os.path.realpath(__file__))))
 VERSION = MANIFEST["version"]
 DOMAIN = MANIFEST[CONF_DOMAIN]

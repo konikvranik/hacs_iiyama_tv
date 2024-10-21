@@ -19,7 +19,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 import pyamasicp.commands
-from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, wake_on_lan, CONF_WOL_PORT
+from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT
 
 SCAN_INTERVAL = timedelta(seconds=15)
 _LOGGER = logging.getLogger(__name__)

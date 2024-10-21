@@ -3,15 +3,15 @@
 		"step": {
 			"user": {
 				"data": {
-					"name": "Název zařízení.",
-					"host": "Hostname nebo IP adresa.",
-					"mac": "MAC adresa zařízení.",
-					"wol_target": "Wake on lan broadcast adresa.",
-					"wol_port": "Wake on lan broadcast port."
+					"name": "Zadejte prosím název zařízení.",
+					"host": "Zadejte prosím hostname nebo IP adresu.",
+					"mac": "Zadejte prosím MAC adresu zařízení.",
+					"wol_target": "Zadejte prosím Wake on lan broadcast adresu.",
+					"wol_port": "Zadejte prosím Wake on lan broadcast port."
 				},
 				"data_description": {
 					"name": "Název zařízení.",
-					"host": "Cílové jméno nebo IP adresa.",
+					"host": "Hostname nebo IP adresa.",
 					"mac": "MAC adresa zařízení.",
 					"wol_target": "Wake on lan broadcast adresa.",
 					"wol_port": "Wake on lan broadcast port."
@@ -19,11 +19,11 @@
 			},
 			"init": {
 				"data": {
-					"name": "Název zařízení.",
-					"host": "Hostname nebo IP adresa.",
-					"mac": "MAC adresa zařízení.",
-					"wol_target": "Wake on lan broadcast adresa.",
-					"wol_port": "Wake on lan broadcast port."
+					"name": "Zadejte prosím název zařízení.",
+					"host": "Zadejte prosím hostname nebo IP adresu.",
+					"mac": "Zadejte prosím MAC adresu zařízení.",
+					"wol_target": "Zadejte prosím Wake on lan broadcast adresu.",
+					"wol_port": "Zadejte prosím Wake on lan broadcast port."
 				},
 				"data_description": {
 					"name": "Název zařízení.",
@@ -35,11 +35,11 @@
 			},
 			"reconfigure": {
 				"data": {
-					"name": "Název zařízení.",
-					"host": "Hostname nebo IP adresa.",
-					"mac": "MAC adresa zařízení.",
-					"wol_target": "Wake on lan broadcast adresa.",
-					"wol_port": "Wake on lan broadcast port."
+					"name": "Zadejte prosím název zařízení.",
+					"host": "Zadejte prosím hostname nebo IP adresu.",
+					"mac": "Zadejte prosím MAC adresu zařízení.",
+					"wol_target": "Zadejte prosím Wake on lan broadcast adresu.",
+					"wol_port": "Zadejte prosím Wake on lan broadcast port."
 				},
 				"data_description": {
 					"name": "Název zařízení.",

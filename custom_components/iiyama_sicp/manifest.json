@@ -1,4 +1,5 @@
 {
+	"version": "0.2.12",
 	"domain": "iiyama_sicp",
 	"name": "iiyama TV rs232 over LAN Media Player",
 	"codeowners": [
@@ -9,7 +10,6 @@
 	"iot_class": "local_push",
 	"issue_tracker": "https://github.com/konikvranik/hacs_iiyama_tv/issues",
 	"requirements": [
-		"pyamasicp>=0.2.7"
-	],
-	"version": "0.2.11"
+		"pyamasicp>=0.2.8"
+	]
 }

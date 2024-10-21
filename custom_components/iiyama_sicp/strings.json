@@ -1,0 +1,60 @@
+{
+	"config": {
+		"step": {
+			"user": {
+				"title": "Add Group",
+				"description": "Some description",
+				"data": {
+					"name": "Name of the device.",
+					"host": "Target host name or IP address.",
+					"mac": "MAC address of the device.",
+					"wol_target": "Wake on lan broadcast address.",
+					"wol_port": "Wake on lan broadcast port."
+				},
+				"data_description": {
+					"name": "Name of the device.",
+					"host": "Target host name or IP address.",
+					"mac": "MAC address of the device.",
+					"wol_target": "Wake on lan broadcast address.",
+					"wol_port": "Wake on lan broadcast port."
+				}
+			},
+			"init": {
+				"title": "Add Group",
+				"description": "Some description",
+				"data": {
+					"name": "Name of the device.",
+					"host": "Target host name or IP address.",
+					"mac": "MAC address of the device.",
+					"wol_target": "Wake on lan broadcast address.",
+					"wol_port": "Wake on lan broadcast port."
+				},
+				"data_description": {
+					"name": "Name of the device.",
+					"host": "Target host name or IP address.",
+					"mac": "MAC address of the device.",
+					"wol_target": "Wake on lan broadcast address.",
+					"wol_port": "Wake on lan broadcast port."
+				}
+			},
+			"reconfigure": {
+				"title": "Add Group",
+				"description": "Some description",
+				"data": {
+					"name": "Name of the device.",
+					"host": "Target host name or IP address.",
+					"mac": "MAC address of the device.",
+					"wol_target": "Wake on lan broadcast address.",
+					"wol_port": "Wake on lan broadcast port."
+				},
+				"data_description": {
+					"name": "Name of the device.",
+					"host": "Target host name or IP address.",
+					"mac": "MAC address of the device.",
+					"wol_target": "Wake on lan broadcast address.",
+					"wol_port": "Wake on lan broadcast port."
+				}
+			}
+		}
+	}
+}

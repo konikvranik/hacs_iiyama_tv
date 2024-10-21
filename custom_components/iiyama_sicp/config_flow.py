@@ -16,23 +16,22 @@ _LOGGER = logging.getLogger(__name__)
 
 async def _show_form(self, step, user_input):
     """Configure the form."""
-    data_schema = vol.Schema(
-        {
-            vol.Optional(CONF_HOST,
-                         default=user_input[CONF_HOST] if user_input and (CONF_HOST in user_input) else UNDEFINED): str,
-            vol.Optional(CONF_NAME,
-                         default=user_input[CONF_NAME] if user_input and (
-                                 CONF_NAME in user_input) else DEFAULT_NAME): str,
-            vol.Optional(CONF_MAC,
-                         default=user_input[CONF_MAC] if user_input and (CONF_MAC in user_input) else UNDEFINED): str,
-            vol.Optional(CONF_WOL_TARGET,
-                         default=user_input[CONF_WOL_TARGET] if user_input and (
+    options = {
+        vol.Optional(CONF_HOST,
+                     default=user_input[CONF_HOST] if user_input and (CONF_HOST in user_input) else UNDEFINED): str,
+        vol.Optional(CONF_NAME,
+                     default=user_input[CONF_NAME] if user_input and (CONF_NAME in user_input) else DEFAULT_NAME): str,
+        vol.Optional(CONF_MAC,
+                     default=user_input[CONF_MAC] if user_input and (CONF_MAC in user_input) else UNDEFINED): str,
+        vol.Optional(CONF_WOL_TARGET,
+                     default=user_input[CONF_WOL_TARGET] if user_input and (
                                  CONF_WOL_TARGET in user_input) else UNDEFINED): str,
-            vol.Optional(CONF_WOL_PORT,
-                         default=user_input[CONF_WOL_PORT] if user_input and (
+        vol.Optional(CONF_WOL_PORT,
+                     default=user_input[CONF_WOL_PORT] if user_input and (
                                  CONF_WOL_PORT in user_input) else UNDEFINED): int,
-        })
-    return self.async_show_form(step_id=step, data_schema=data_schema, errors=self._errors)
+    }
+    return self.async_show_form(step_id=step, data_schema=(vol.Schema(
+        options)), errors=self._errors)
 
 
 @config_entries.HANDLERS.register(DOMAIN)
@@ -57,7 +56,7 @@ class HDOFlowHandler(config_entries.ConfigFlow):
                 # Call next step
                 return self.async_create_entry(title=self._data[CONF_HOST], data=self._data)
             else:
-                self._errors[CONF_BASE] = CONF_HOST.title()
+                self._errors[CONF_BASE] = CONF_HOST
         return await _show_form(self, "user", self._data)
 
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):

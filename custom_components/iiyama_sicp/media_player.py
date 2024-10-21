@@ -1,10 +1,12 @@
 """ mqtt-mediaplayer """
 import logging
+import socket
 import uuid
 from datetime import timedelta
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+import wakeonlan
 from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity, MediaPlayerEntityFeature, \
     MediaPlayerState
 from homeassistant.config_entries import ConfigEntry
@@ -17,7 +19,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 import pyamasicp.commands
-from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN
+from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, wake_on_lan, CONF_WOL_PORT
 
 SCAN_INTERVAL = timedelta(seconds=15)
 _LOGGER = logging.getLogger(__name__)
@@ -44,23 +46,25 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry,
                                                                 identifiers={(DOMAIN, config_entry.entry_id)}),
                                                config_entry.data.get(CONF_NAME), config_entry.data.get(CONF_HOST),
                                                config_entry.data.get(CONF_MAC),
-                                               config_entry.data.get(CONF_WOL_TARGET)))], True)
+                                               config_entry.data.get(CONF_WOL_TARGET),
+                                               config_entry.data.get(CONF_WOL_PORT)))], True)
 
 
 class IiyamaSicpMediaPlayer(MediaPlayerEntity):
     """MQTTMediaPlayer"""
 
     def __init__(self, hass: HomeAssistant, device_info: DeviceInfo, name: str, host: str, mac: str,
-                 wol_target: str) -> None:
+                 broadcast_address: str, broadcast_port: int) -> None:
         """Initialize"""
 
         self._attr_device_info = device_info
-        _LOGGER.debug("IiyamaSicpMediaPlayer.__init__(%s, %s, %s, %s)" % (name, host, mac, wol_target))
+        _LOGGER.debug("IiyamaSicpMediaPlayer.__init__(%s, %s, %s, %s)" % (name, host, mac, broadcast_address))
         self.hass = hass
-        client = pyamasicp.commands.Client(host, mac=mac, wol_target=wol_target)
+        client = pyamasicp.commands.Client(host)
         client._logger.setLevel(_LOGGER.getEffectiveLevel())
-        _LOGGER.debug(
-            'host: %s:%d, mac: %s, wol_target: %s' % (client._host, client._port, client._mac, client._wol_target))
+        self._mac_addresses = mac.split(r'[\s,;]')
+        self._broadcast_port = broadcast_port
+        self._broadcast_address = broadcast_address
         self._client = pyamasicp.commands.Commands(client)
         self._name = name
         self._host = host
@@ -126,5 +130,24 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
 
     def turn_on(self):
         """Send turn on command."""
-        self._client.set_power_state(True)
+
+        try:
+            self._client.set_power_state(True)
+        except socket.error:
+            wake_on_lan()
         self._attr_state = MediaPlayerState.ON
+
+    def wake_on_lan(self):
+        service_kwargs = {}
+        if self._broadcast_address is not None:
+            service_kwargs["ip_address"] = self._broadcast_address
+        if self._broadcast_port is not None:
+            service_kwargs["port"] = self._broadcast_port
+
+        _LOGGER.debug(
+            "Send magic packet to mac %s (broadcast: %s, port: %s)",
+            self._mac_addresses,
+            self._broadcast_address,
+            self._broadcast_port,
+        )
+        wakeonlan.send_magic_packet(*self._mac_addresses, **service_kwargs)

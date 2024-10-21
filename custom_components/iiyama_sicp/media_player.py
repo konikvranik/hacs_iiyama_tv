@@ -18,7 +18,6 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-import pyamasicp.commands
 from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT
 
 SCAN_INTERVAL = timedelta(seconds=15)
@@ -50,6 +49,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry,
                                                config_entry.data.get(CONF_WOL_PORT)))], True)
 
 
+import pyamasicp.commands as pyamasicp
+
+
 class IiyamaSicpMediaPlayer(MediaPlayerEntity):
     """MQTTMediaPlayer"""
 
@@ -60,12 +62,10 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
         self._attr_device_info = device_info
         _LOGGER.debug("IiyamaSicpMediaPlayer.__init__(%s, %s, %s, %s)" % (name, host, mac, broadcast_address))
         self.hass = hass
-        client = pyamasicp.commands.Client(host)
-        client._logger.setLevel(_LOGGER.getEffectiveLevel())
         self._mac_addresses = mac.split(r'[\s,;]')
         self._broadcast_port = broadcast_port
         self._broadcast_address = broadcast_address
-        self._client = pyamasicp.commands.Commands(client)
+        self._client = pyamasicp.Commands(pyamasicp.Client(host))
         self._name = name
         self._host = host
         self._mac = mac
@@ -77,7 +77,7 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
         self._attr_supported_features |= MediaPlayerEntityFeature.VOLUME_MUTE
         self._attr_supported_features |= MediaPlayerEntityFeature.TURN_OFF
         self._attr_supported_features |= MediaPlayerEntityFeature.TURN_ON
-        self._attr_source_list = [b.replace(" ", " ") for b in pyamasicp.commands.INPUT_SOURCES.keys()]
+        self._attr_source_list = [b.replace(" ", " ") for b in pyamasicp.INPUT_SOURCES.keys()]
         self._initiated = False
         self._attr_device_info["manufacturer"] = "Iiyama"
         self._attr_device_info["identifiers"].add(("mac", self._mac))
@@ -97,7 +97,7 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
         self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
         if state:
             source_ = self._client.get_input_source()[0]
-            for k, v in pyamasicp.commands.INPUT_SOURCES.items():
+            for k, v in pyamasicp.INPUT_SOURCES.items():
                 if source_ == v:
                     self._attr_source = k
             self._attr_volume_level = self._client.get_volume()[0] / 100.0
@@ -120,7 +120,7 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
 
     def select_source(self, source):
         """Send source select command."""
-        self._client.set_input_source(pyamasicp.commands.INPUT_SOURCES[source])
+        self._client.set_input_source(pyamasicp.INPUT_SOURCES[source])
         self._attr_source = source
 
     def turn_off(self):
@@ -134,7 +134,7 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
         try:
             self._client.set_power_state(True)
         except socket.error:
-            wake_on_lan()
+            self.wake_on_lan()
         self._attr_state = MediaPlayerState.ON
 
     def wake_on_lan(self):

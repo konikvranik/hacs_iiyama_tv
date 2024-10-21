@@ -6,7 +6,6 @@ import typing
 import getmac
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-import wakeonlan
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_NAME, CONF_FORCE_UPDATE, CONF_HOST, CONF_MAC, Platform, CONF_DOMAIN)
 from homeassistant.core import HomeAssistant
@@ -59,5 +58,3 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
         hass.config_entries.async_update_entry(config_entry, data=data, minor_version=1, version=1)
     return True
-
-

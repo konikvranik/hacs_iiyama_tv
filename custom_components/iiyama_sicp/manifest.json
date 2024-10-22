@@ -1,5 +1,5 @@
 {
-	"version": "0.2.13",
+	"version": "0.2.14",
 	"domain": "iiyama_sicp",
 	"name": "iiyama TV rs232 over LAN Media Player",
 	"codeowners": [

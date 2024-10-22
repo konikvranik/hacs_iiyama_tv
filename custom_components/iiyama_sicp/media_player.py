@@ -119,19 +119,26 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
 
     def set_volume_level(self, volume):
         """Set volume level."""
-        self._client.set_volume(output_volume=int(volume * 100))
+        try:
+            self._client.set_volume(output_volume=int(volume * 100))
+        finally:
+            self._client.disconnect()
         self._attr_volume_level = volume
 
     def select_source(self, source):
         """Send source select command."""
-        self._client.set_input_source(pyamasicp.INPUT_SOURCES[source])
-        self._client.disconnect()
+        try:
+            self._client.set_input_source(pyamasicp.INPUT_SOURCES[source])
+        finally:
+            self._client.disconnect()
         self._attr_source = source
 
     def turn_off(self):
         """Send turn off command."""
-        self._client.set_power_state(False)
-        self._client.disconnect()
+        try:
+            self._client.set_power_state(False)
+        finally:
+            self._client.disconnect()
         self._attr_state = MediaPlayerState.OFF
 
     def turn_on(self):

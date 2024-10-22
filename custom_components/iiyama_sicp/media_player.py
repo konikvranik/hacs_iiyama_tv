@@ -94,20 +94,23 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
 
     def update(self):
         """ Update the States"""
-        state = self._client.get_power_state()
-        self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
-        if state:
-            source_ = self._client.get_input_source()[0]
-            for k, v in pyamasicp.INPUT_SOURCES.items():
-                if source_ == v:
-                    self._attr_source = k
-            self._attr_volume_level = self._client.get_volume()[0] / 100.0
-            if not self._initiated:
-                try:
-                    self.setup_device()
-                    _LOGGER.debug("DeviceInfo: %s", self.device_info)
-                except Exception:
-                    pass
+        try:
+            state = self._client.get_power_state()
+            self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
+            if state:
+                source_ = self._client.get_input_source()[0]
+                for k, v in pyamasicp.INPUT_SOURCES.items():
+                    if source_ == v:
+                        self._attr_source = k
+                self._attr_volume_level = self._client.get_volume()[0] / 100.0
+                if not self._initiated:
+                    try:
+                        self.setup_device()
+                        _LOGGER.debug("DeviceInfo: %s", self.device_info)
+                    except Exception:
+                        pass
+        finally:
+            self._client.disconnect()
 
     @property
     def name(self):
@@ -122,11 +125,13 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
     def select_source(self, source):
         """Send source select command."""
         self._client.set_input_source(pyamasicp.INPUT_SOURCES[source])
+        self._client.disconnect()
         self._attr_source = source
 
     def turn_off(self):
         """Send turn off command."""
         self._client.set_power_state(False)
+        self._client.disconnect()
         self._attr_state = MediaPlayerState.OFF
 
     def turn_on(self):
@@ -136,6 +141,8 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
             self._client.set_power_state(True)
         except socket.error:
             self.wake_on_lan()
+        finally:
+            self._client.disconnect()
         self._attr_state = MediaPlayerState.ON
 
     def wake_on_lan(self):

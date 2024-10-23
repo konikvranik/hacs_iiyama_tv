@@ -3,6 +3,7 @@ import logging
 import socket
 import uuid
 from datetime import timedelta
+from time import sleep
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -95,16 +96,20 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
     def update(self):
         """ Update the States"""
         try:
+            sleep(.5)
             state = self._client.get_power_state()
             self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
             if state:
+                sleep(.5)
                 source_ = self._client.get_input_source()[0]
                 for k, v in pyamasicp.INPUT_SOURCES.items():
                     if source_ == v:
                         self._attr_source = k
+                sleep(.5)
                 self._attr_volume_level = self._client.get_volume()[0] / 100.0
                 if not self._initiated:
                     try:
+                        sleep(.5)
                         self.setup_device()
                         _LOGGER.debug("DeviceInfo: %s", self.device_info)
                     except Exception:

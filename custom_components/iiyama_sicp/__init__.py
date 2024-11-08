@@ -11,7 +11,6 @@ from homeassistant.const import (CONF_NAME, CONF_FORCE_UPDATE, CONF_HOST, CONF_M
 from homeassistant.core import HomeAssistant
 from voluptuous import ALLOW_EXTRA
 
-REQUIREMENTS = "pyamasicp"
 CONF_WOL_TARGET: typing.Final = "wol_target"
 CONF_WOL_PORT: typing.Final = "wol_port"
 CONF_MAX_COUNT = 'maxCount'

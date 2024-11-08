@@ -2,8 +2,6 @@
 import logging
 import socket
 import uuid
-from datetime import timedelta
-from time import sleep
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -18,11 +16,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from time import sleep
 
 from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT
 
-REQUIREMENTS="pyamasicp"
-#SCAN_INTERVAL = timedelta(minutes=1)
+# SCAN_INTERVAL = timedelta(minutes=1)
 _LOGGER = logging.getLogger(__name__)
 _VALID_STATES = [
     MediaPlayerState.ON,
@@ -51,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry,
                                                config_entry.data.get(CONF_WOL_PORT)))], True)
 
 
-import pyamasicp.commands as pyamasicp
+import custom_components.iiyama_sicp.pyamasicp.commands as pyamasicp
 
 
 class IiyamaSicpMediaPlayer(MediaPlayerEntity):

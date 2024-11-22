@@ -49,9 +49,12 @@ class Client:
                     return self._process_response(id, command, recv)
                 except socket.timeout:
                     self._logger.error("Socket timeout, no response received from the server.")
+                    self.close()
                 except socket.error as e:
                     self._logger.error(f"Socket error: {e}")
+                    self.close()
             else:
+                self.close()
                 raise socket.error("Unable to connect socket.")
 
     def _call_remote(self, message):

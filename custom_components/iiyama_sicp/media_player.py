@@ -90,7 +90,7 @@ class IiyamaSicpMediaPlayer(CoordinatorEntity[SicpUpdateCoordinator], MediaPlaye
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        self._attr_state = self.coordinator.data.state
+        self._attr_state = MediaPlayerState.ON if self.coordinator.data.state else MediaPlayerState.OFF
         self._attr_source = self.coordinator.data.input_source
         self._attr_volume_level = self.coordinator.data.volume_level
 

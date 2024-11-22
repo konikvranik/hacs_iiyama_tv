@@ -7,7 +7,6 @@ from datetime import timedelta
 from functools import partial
 
 import async_timeout
-from homeassistant.components.media_player import MediaPlayerState
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -93,12 +92,9 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
                 await asyncio.sleep(.5)
                 try:
                     state = self._api_commands.get_power_state()
-                    result.state = True if state else False
                 except socket.error as e:
                     result.state = False
                     _LOGGER.debug(f"Failed to get state: {e}")
-
-                self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
 
                 if state:
                     await asyncio.sleep(.5)

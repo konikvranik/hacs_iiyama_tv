@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from voluptuous import ALLOW_EXTRA
 
 from custom_components.iiyama_sicp.coordinator import SicpUpdateCoordinator
-from pyamasicp.client import Client
+from custom_components.iiyama_sicp.pyamasicp.client import Client
 
 CONF_WOL_TARGET: typing.Final = "wol_target"
 CONF_WOL_PORT: typing.Final = "wol_port"

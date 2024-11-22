@@ -19,8 +19,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT, SicpUpdateCoordinator
-from pyamasicp.client import Client
-from pyamasicp.commands import Commands, INPUT_SOURCES
+from custom_components.iiyama_sicp.pyamasicp.client import Client
+from custom_components.iiyama_sicp.pyamasicp.commands import INPUT_SOURCES, Commands
 
 # SCAN_INTERVAL = timedelta(minutes=1)
 _LOGGER = logging.getLogger(__name__)

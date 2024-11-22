@@ -10,8 +10,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from pyamasicp.client import Client
-from pyamasicp.commands import Commands, INPUT_SOURCES
+from custom_components.iiyama_sicp.pyamasicp.client import Client
+from custom_components.iiyama_sicp.pyamasicp.commands import INPUT_SOURCES, Commands
 
 _LOGGER = logging.getLogger(__name__)
 

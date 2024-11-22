@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import socket
 from datetime import timedelta
 from functools import partial
 
 import async_timeout
+from homeassistant.components.media_player import MediaPlayerState
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -20,6 +22,7 @@ class SicpData:
     state: bool
     input_source: str
     volume_level: int
+
     model_id: str
     model: str
     hw_version: str
@@ -88,8 +91,14 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
 
                 result = SicpData()
                 await asyncio.sleep(.5)
-                state = self._api_commands.get_power_state()
-                result.state = state
+                try:
+                    state = self._api_commands.get_power_state()
+                    result.state = True if state else False
+                except socket.error as e:
+                    result.state = False
+                    _LOGGER.debug(f"Failed to get state: {e}")
+
+                self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
 
                 if state:
                     await asyncio.sleep(.5)
@@ -97,7 +106,6 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
                     for k, v in INPUT_SOURCES.items():
                         if source_ == v:
                             result.input_source = k
-                            self._attr_source = k
                     await asyncio.sleep(.5)
 
                     result.volume_level = self._api_commands.get_volume()[0] / 100.0

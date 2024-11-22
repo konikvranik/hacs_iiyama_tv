@@ -100,6 +100,11 @@ class IiyamaSicpMediaPlayer(CoordinatorEntity[SicpUpdateCoordinator], MediaPlaye
         await self.coordinator.async_set_volume_level(volume)
         await self.coordinator.async_request_refresh()
 
+    async def async_select_source(self, source):
+        """Send source select command."""
+        await self.coordinator.async_select_source(source)
+        await self.coordinator.async_request_refresh()
+
     async def async_turn_off(self):
         """Send turn off command."""
         await self.coordinator.async_turn_off()

@@ -12,13 +12,15 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_NAME,
     CONF_HOST, CONF_MAC, )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from time import sleep
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT
+from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT, SicpUpdateCoordinator
+from pyamasicp.client import Client
+from pyamasicp.commands import Commands, INPUT_SOURCES
 
 # SCAN_INTERVAL = timedelta(minutes=1)
 _LOGGER = logging.getLogger(__name__)
@@ -43,30 +45,31 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry,
     """Set up ESPHome binary sensors based on a config entry."""
     async_add_entities([(IiyamaSicpMediaPlayer(hass, DeviceInfo(name=config_entry.title,
                                                                 identifiers={(DOMAIN, config_entry.entry_id)}),
+                                               config_entry.runtime_data['coordinator'],
                                                config_entry.data.get(CONF_NAME), config_entry.data.get(CONF_HOST),
                                                config_entry.data.get(CONF_MAC),
                                                config_entry.data.get(CONF_WOL_TARGET),
                                                config_entry.data.get(CONF_WOL_PORT)))], True)
 
 
-import custom_components.iiyama_sicp.pyamasicp.commands as pyamasicp
-
-
-class IiyamaSicpMediaPlayer(MediaPlayerEntity):
+class IiyamaSicpMediaPlayer(CoordinatorEntity[SicpUpdateCoordinator], MediaPlayerEntity):
     """MQTTMediaPlayer"""
 
-    def __init__(self, hass: HomeAssistant, device_info: DeviceInfo, name: str, host: str, mac: str,
+    def __init__(self, hass: HomeAssistant, device_info: DeviceInfo, coordinator: SicpUpdateCoordinator, name: str,
+                 host: str, mac: str,
                  broadcast_address: str, broadcast_port: int) -> None:
         """Initialize"""
 
+        super().__init__(coordinator)
         self._attr_device_info = device_info
         _LOGGER.debug("IiyamaSicpMediaPlayer.__init__(%s, %s, %s, %s)" % (name, host, mac, broadcast_address))
         self.hass = hass
         self._mac_addresses = mac.split(r'[\s,;]')
         self._broadcast_port = broadcast_port
         self._broadcast_address = broadcast_address
-        self._client = pyamasicp.Commands(pyamasicp.Client(host))
-        self._name = name
+        self._client = Commands(Client(host))
+        self._attr_name = name
+        self._attr_unique_id = f"iiyama_sicp_{host}_{mac}"
         self._host = host
         self._mac = mac
         self._attr_unique_id = mac if mac else str(uuid.uuid4())
@@ -77,83 +80,39 @@ class IiyamaSicpMediaPlayer(MediaPlayerEntity):
         self._attr_supported_features |= MediaPlayerEntityFeature.VOLUME_MUTE
         self._attr_supported_features |= MediaPlayerEntityFeature.TURN_OFF
         self._attr_supported_features |= MediaPlayerEntityFeature.TURN_ON
-        self._attr_source_list = [b.replace(" ", " ") for b in pyamasicp.INPUT_SOURCES.keys()]
+        self._attr_source_list = [b.replace(" ", " ") for b in INPUT_SOURCES.keys()]
         self._initiated = False
         self._attr_device_info["manufacturer"] = "Iiyama"
         self._attr_device_info["identifiers"].add(("mac", self._mac))
         self._attr_device_info["identifiers"].add(("host", self._host))
         self._attr_device_info["connections"] = {(dr.CONNECTION_NETWORK_MAC, self._mac), ("host", self._host)}
 
-    def setup_device(self):
-        self._attr_device_info["model_id"] = self._client.get_model_number()
-        self._attr_device_info["model"] = self._attr_device_info["model_id"]
-        self._attr_device_info["hw_version"] = self._client.get_fw_version()
-        self._attr_device_info["sw_version"] = self._client.get_platform_version()
-        self._initiated = True
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self._attr_state = self.coordinator.data.state
+        self._attr_source = self.coordinator.data.input_source
+        self._attr_volume_level = self.coordinator.data.volume_level
 
-    def update(self):
-        """ Update the States"""
-        try:
-            sleep(.5)
-            state = self._client.get_power_state()
-            self._attr_state = MediaPlayerState.ON if state else MediaPlayerState.OFF
-            if state:
-                sleep(.5)
-                source_ = self._client.get_input_source()[0]
-                for k, v in pyamasicp.INPUT_SOURCES.items():
-                    if source_ == v:
-                        self._attr_source = k
-                sleep(.5)
-                self._attr_volume_level = self._client.get_volume()[0] / 100.0
-                if not self._initiated:
-                    try:
-                        sleep(.5)
-                        self.setup_device()
-                        _LOGGER.debug("DeviceInfo: %s", self.device_info)
-                    except Exception:
-                        pass
-        finally:
-            self._client.disconnect()
+        self.async_write_ha_state()
 
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+    async def async_set_volume_level(self, volume: float) -> None:
+        await self.coordinator.async_set_volume_level(volume)
+        await self.coordinator.async_request_refresh()
 
-    def set_volume_level(self, volume):
-        """Set volume level."""
-        try:
-            self._client.set_volume(output_volume=int(volume * 100))
-        finally:
-            self._client.disconnect()
-        self._attr_volume_level = volume
-
-    def select_source(self, source):
-        """Send source select command."""
-        try:
-            self._client.set_input_source(pyamasicp.INPUT_SOURCES[source])
-        finally:
-            self._client.disconnect()
-        self._attr_source = source
-
-    def turn_off(self):
+    async def async_turn_off(self):
         """Send turn off command."""
-        try:
-            self._client.set_power_state(False)
-        finally:
-            self._client.disconnect()
-        self._attr_state = MediaPlayerState.OFF
+        await self.coordinator.async_turn_off()
+        await self.coordinator.async_request_refresh()
 
-    def turn_on(self):
+    async def async_turn_on(self):
         """Send turn on command."""
 
         try:
-            self._client.set_power_state(True)
+            await self.coordinator.async_turn_on()
         except socket.error:
             self.wake_on_lan()
-        finally:
-            self._client.disconnect()
-        self._attr_state = MediaPlayerState.ON
+        await self.coordinator.async_request_refresh()
 
     def wake_on_lan(self):
         service_kwargs = {}

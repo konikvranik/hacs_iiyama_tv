@@ -110,6 +110,10 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
                 raise UpdateFailed(f"Error communicating with API: {err}")
             return result
 
+    async def async_shutdown(self) -> None:
+        await super().async_shutdown()
+        await self.hass.async_add_executor_job(self._api_client.close)
+
     async def async_set_volume_level(self, volume):
         """Set volume level."""
         await self.hass.async_add_executor_job(partial(self._api_commands.set_volume, output_volume=int(volume * 100)))

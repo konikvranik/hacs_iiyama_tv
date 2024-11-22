@@ -1,4 +1,5 @@
 """ mqtt-mediaplayer """
+import inspect
 import logging
 import socket
 import uuid
@@ -92,6 +93,8 @@ class IiyamaSicpMediaPlayer(CoordinatorEntity[SicpUpdateCoordinator], MediaPlaye
         """Handle updated data from the coordinator."""
         self._attr_state = MediaPlayerState.ON if hasattr(self.coordinator.data,
                                                           'state') and self.coordinator.data.state else MediaPlayerState.OFF
+
+        _LOGGER.debug(f"State updated to: {self._attr_state} from {inspect.getmembers(self.coordinator.data)}")
         self._attr_source = self.coordinator.data.input_source
         self._attr_volume_level = self.coordinator.data.volume_level
 

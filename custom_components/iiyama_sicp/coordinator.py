@@ -43,7 +43,7 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
             # Set always_update to `False` if the data returned from the
             # api can be compared via `__eq__` to avoid duplicate updates
             # being dispatched to listeners
-            always_update=False,
+            always_update=True,
             config_entry=config_entry
         )
         self._api_client = client
@@ -59,7 +59,9 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         coordinator.async_config_entry_first_refresh.
         """
 
-        self.data = SicpData()
+        if not self.data:
+            self.data = SicpData()
+
         try:
             self.data.model_id = self._api_commands.get_model_number()
             self.data.model = self.data.model_id
@@ -86,17 +88,18 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
 
             try:
                 if self.data is None:
-                    self.data = SicpData
+                    self.data = SicpData()
 
-                result = SicpData()
+                result = self.data
                 await asyncio.sleep(.5)
                 try:
-                    state = self._api_commands.get_power_state()
+                    result.state = self._api_commands.get_power_state()
+                    _LOGGER.debug(f"Got state: {result.state}")
                 except socket.error as e:
                     result.state = False
                     _LOGGER.debug(f"Failed to get state: {e}")
 
-                if state:
+                if result.state:
                     await asyncio.sleep(.5)
                     source_ = self._api_commands.get_input_source()[0]
                     for k, v in INPUT_SOURCES.items():

@@ -7,6 +7,7 @@ from functools import partial
 
 import async_timeout
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from pyamasicp.client import Client
@@ -57,10 +58,13 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         """
 
         self.data = SicpData()
-        self.data.model_id = self._api_commands.get_model_number()
-        self.data.model = self.data.model_id
-        self.data.hw_version = self._api_commands.get_fw_version()
-        self.data.sw_version = self._api_commands.get_platform_version()
+        try:
+            self.data.model_id = self._api_commands.get_model_number()
+            self.data.model = self.data.model_id
+            self.data.hw_version = self._api_commands.get_fw_version()
+            self.data.sw_version = self._api_commands.get_platform_version()
+        except Exception as e:
+            raise ConfigEntryNotReady from e
 
     async def _async_update_data(self):
         """Fetch data from API endpoint.

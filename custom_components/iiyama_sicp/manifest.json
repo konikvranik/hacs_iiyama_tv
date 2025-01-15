@@ -11,6 +11,7 @@
 	"issue_tracker": "https://github.com/konikvranik/hacs_iiyama_tv/issues",
 	"requirements": [
 		"getmac",
-		"wakeonlan"
+		"wakeonlan",
+		"pyamasicp"
 	]
 }

@@ -132,7 +132,7 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
 
     async def async_set_volume_level(self, volume):
         """Set volume level."""
-        await self.hass.async_add_executor_job(partial(self._api_commands.set_volume, output_volume=int(volume * 100)))
+        await self.hass.async_add_executor_job(partial(self._api_commands.set_volume, volume=int(volume * 100)))
 
     async def async_select_source(self, source):
         """Send source select command."""

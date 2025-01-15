@@ -7,8 +7,9 @@ from datetime import timedelta
 from functools import partial
 
 import async_timeout
+import getmac
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.const import CONF_MAC, CONF_HOST
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from custom_components.iiyama_sicp.pyamasicp.client import Client
@@ -59,17 +60,6 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         coordinator.async_config_entry_first_refresh.
         """
 
-        if not self.data:
-            self.data = SicpData()
-
-        try:
-            self.data.model_id = self._api_commands.get_model_number()
-            self.data.model = self.data.model_id
-            self.data.hw_version = self._api_commands.get_fw_version()
-            self.data.sw_version = self._api_commands.get_platform_version()
-        except Exception as e:
-            raise ConfigEntryNotReady from e
-
     async def _async_update_data(self):
         """Fetch data from API endpoint.
 
@@ -86,32 +76,55 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
             listening_idx = set(self.async_contexts())
             _LOGGER.debug("Listening contexts: %s", listening_idx)
 
+        await self._setup_mac()
+        try:
+            await self._setup_device_info()
+        except Exception as e:
+            raise UpdateFailed from e
+
+        try:
+            if self.data is None:
+                self.data = SicpData()
+
+            result = self.data
+            await asyncio.sleep(.5)
             try:
-                if self.data is None:
-                    self.data = SicpData()
+                result.state = self._api_commands.get_power_state()
+                _LOGGER.debug(f"Got state: {result.state}")
+            except socket.error as e:
+                result.state = False
+                _LOGGER.debug(f"Failed to get state: {e}")
 
-                result = self.data
+            if result.state:
                 await asyncio.sleep(.5)
-                try:
-                    result.state = self._api_commands.get_power_state()
-                    _LOGGER.debug(f"Got state: {result.state}")
-                except socket.error as e:
-                    result.state = False
-                    _LOGGER.debug(f"Failed to get state: {e}")
+                source_ = self._api_commands.get_input_source()[0]
+                for k, v in INPUT_SOURCES.items():
+                    if source_ == v:
+                        result.input_source = k
+                await asyncio.sleep(.5)
 
-                if result.state:
-                    await asyncio.sleep(.5)
-                    source_ = self._api_commands.get_input_source()[0]
-                    for k, v in INPUT_SOURCES.items():
-                        if source_ == v:
-                            result.input_source = k
-                    await asyncio.sleep(.5)
+                result.volume_level = self._api_commands.get_volume()[0] / 100.0
 
-                    result.volume_level = self._api_commands.get_volume()[0] / 100.0
+        except Exception as err:
+            raise UpdateFailed(f"Error communicating with API: {err}")
+        return result
 
-            except Exception as err:
-                raise UpdateFailed(f"Error communicating with API: {err}")
-            return result
+    async def _setup_device_info(self):
+        if not self.data:
+            self.data = SicpData()
+        self.data.model_id = self._api_commands.get_model_number()
+        self.data.model = self.data.model_id
+        self.data.hw_version = self._api_commands.get_fw_version()
+        self.data.sw_version = self._api_commands.get_platform_version()
+
+    async def _setup_mac(self):
+        try:
+            data = {**self.config_entry.data}
+            if not (CONF_MAC in data and data[CONF_MAC]):
+                data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
+                self.hass.config_entries.async_update_entry(self.config_entry, data=data, minor_version=1, version=1)
+        except Exception as e:
+            self.logger.warning("Failed to get MAC address", exc_info=e)
 
     async def async_shutdown(self) -> None:
         await super().async_shutdown()

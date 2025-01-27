@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import async_timeout
 import asyncio
+import getmac
 import logging
 import socket
+from dataclasses import dataclass
 from datetime import timedelta
 from functools import partial
-
-import async_timeout
-import getmac
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_HOST
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -18,15 +18,15 @@ from custom_components.iiyama_sicp.pyamasicp.commands import INPUT_SOURCES, Comm
 _LOGGER = logging.getLogger(__name__)
 
 
+@dataclass
 class SicpData:
-    state: bool
-    input_source: str
-    volume_level: int
-
-    model_id: str
-    model: str
-    hw_version: str
-    sw_version: str
+    state: bool = None
+    input_source: str = None
+    volume_level: int = None
+    model_id: str = None
+    model: str = None
+    hw_version: str = None
+    sw_version: str = None
 
 
 class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
@@ -77,16 +77,14 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
             _LOGGER.debug("Listening contexts: %s", listening_idx)
 
         await self._setup_mac()
+
+        if self.data is None:
+            self.data = SicpData()
+        result = self.data
+
         try:
             await self._setup_device_info()
-        except Exception as e:
-            raise UpdateFailed from e
 
-        try:
-            if self.data is None:
-                self.data = SicpData()
-
-            result = self.data
             await asyncio.sleep(.5)
             try:
                 result.state = self._api_commands.get_power_state()
@@ -94,17 +92,20 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
             except socket.error as e:
                 result.state = False
                 _LOGGER.debug(f"Failed to get state: {e}")
+                return result
 
-            if result.state:
-                await asyncio.sleep(.5)
-                source_ = self._api_commands.get_input_source()[0]
-                for k, v in INPUT_SOURCES.items():
-                    if source_ == v:
-                        result.input_source = k
-                await asyncio.sleep(.5)
+            await asyncio.sleep(.5)
+            source_ = self._api_commands.get_input_source()[0]
+            for k, v in INPUT_SOURCES.items():
+                if source_ == v:
+                    result.input_source = k
+            await asyncio.sleep(.5)
 
-                result.volume_level = self._api_commands.get_volume()[0] / 100.0
+            result.volume_level = self._api_commands.get_volume()[0] / 100.0
 
+        except socket.error as e:
+            result.state = False
+            return result
         except Exception as err:
             raise UpdateFailed(f"Error communicating with API: {err}")
         return result
@@ -112,10 +113,14 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
     async def _setup_device_info(self):
         if not self.data:
             self.data = SicpData()
-        self.data.model_id = self._api_commands.get_model_number()
-        self.data.model = self.data.model_id
-        self.data.hw_version = self._api_commands.get_fw_version()
-        self.data.sw_version = self._api_commands.get_platform_version()
+        if not self.data.model_id:
+            self.data.model_id = self._api_commands.get_model_number()
+        if (not self.data.model) and self.data.model_id:
+            self.data.model = self.data.model_id
+        if not self.data.hw_version:
+            self.data.hw_version = self._api_commands.get_fw_version()
+        if not self.data.sw_version:
+            self.data.sw_version = self._api_commands.get_platform_version()
 
     async def _setup_mac(self):
         try:

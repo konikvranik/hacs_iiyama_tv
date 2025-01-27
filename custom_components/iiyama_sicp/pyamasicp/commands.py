@@ -119,7 +119,13 @@ class Commands:
         if response:
             return [b for b in response]
 
-    def set_volume(self, volume=0, output_volume=0):
+    def set_volume(self, volume=None, output_volume=None):
+        if volume is None:
+            volume = output_volume
+        if output_volume is None:
+            output_volume = volume
+        if output_volume is None or volume is None:
+            raise CommandException("Volume or output volume must be set.")
         self._client.send(self._id, CMD_SET_VOLUME, bytearray([volume, output_volume]))
 
     def get_input_source(self):
@@ -158,6 +164,7 @@ class Commands:
 
     def disconnect(self):
         self._client.close()
+
 
 class CommandException(Exception):
     pass

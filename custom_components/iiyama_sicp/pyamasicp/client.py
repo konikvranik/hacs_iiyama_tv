@@ -3,7 +3,6 @@ import functools
 import logging
 import socket
 import threading
-from time import sleep
 
 HEADER = b'\xA6'
 CATEGORY = b'\x00'
@@ -13,7 +12,10 @@ DATA_CONTROL = b'\x01'
 
 
 def calculate_checksum(message):
-    return bytes([functools.reduce(lambda a, b: a ^ b, list(message))])
+    if message:
+        return bytes([functools.reduce(lambda a, b: a ^ b, list(message))])
+    else:
+        return 0
 
 
 def _prepare_message(id, command, data):

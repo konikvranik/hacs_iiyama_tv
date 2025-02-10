@@ -60,6 +60,13 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         coordinator.async_config_entry_first_refresh.
         """
 
+        await self._setup_mac()
+
+        try:
+            await self._setup_device_info()
+        except Exception as err:
+            self._api_client.close()
+
     async def _async_update_data(self):
         """Fetch data from API endpoint.
 
@@ -85,28 +92,31 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         try:
             await self._setup_device_info()
 
-            await asyncio.sleep(.5)
+            # await asyncio.sleep(.5)
             try:
                 result.state = self._api_commands.get_power_state()
                 _LOGGER.debug(f"Got state: {result.state}")
             except socket.error as e:
                 result.state = False
                 _LOGGER.debug(f"Failed to get state: {e}")
+                self._api_client.close()
                 return result
 
-            await asyncio.sleep(.5)
+            # await asyncio.sleep(.5)
             source_ = self._api_commands.get_input_source()[0]
             for k, v in INPUT_SOURCES.items():
                 if source_ == v:
                     result.input_source = k
-            await asyncio.sleep(.5)
+            # await asyncio.sleep(.5)
 
             result.volume_level = self._api_commands.get_volume()[0] / 100.0
 
         except socket.error as e:
             result.state = False
+            self._api_client.close()
             return result
         except Exception as err:
+            self._api_client.close()
             raise UpdateFailed(f"Error communicating with API: {err}")
         return result
 

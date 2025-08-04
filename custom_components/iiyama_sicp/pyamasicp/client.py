@@ -34,7 +34,7 @@ class Client:
         self._socket = None
         self._host = host
         self._port = port
-        self._logger = logging.getLogger(self.__class__.__qualname__)
+        self._logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__qualname__}")
         self._buffer_size = buffer_size  # Timeout after 5 seconds
         self._logger.debug('host: %s:%d' % (self._host, self._port))
 
@@ -51,9 +51,9 @@ class Client:
                     return self._process_response(id, command, recv)
                 except socket.timeout:
                     self._logger.error("Socket timeout, no response received from the server.")
-                    self.close()
                 except socket.error as e:
                     self._logger.error(f"Socket error: {e}")
+                finally:
                     self.close()
             else:
                 self.close()

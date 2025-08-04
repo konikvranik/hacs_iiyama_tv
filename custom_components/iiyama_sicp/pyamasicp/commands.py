@@ -90,11 +90,12 @@ INPUT_SOURCES = {
 class Commands:
 
     def __init__(self, client: Client, id=b'\x01'):
-        self._logger = logging.getLogger(self.__class__.__qualname__)
+        self._logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__qualname__}")
         self._client = client
         self._id = id
 
     def get_power_state(self):
+        self._logger.debug("get_power_state")
         try:
             result = self._client.send(self._id, CMD_GET_POWER_STATE)
             match result:
@@ -112,14 +113,17 @@ class Commands:
             return None
 
     def set_power_state(self, state: bool):
+        self._logger.debug("set_power_state(%s)" % state)
         self._client.send(self._id, CMD_SET_POWER_STATE, VAL_POWER_ON if state else VAL_POWER_OFF)
 
     def get_volume(self):
+        self._logger.debug("get_volume")
         response = self._client.send(self._id, CMD_GET_VOLUME)
         if response:
             return [b for b in response]
 
     def set_volume(self, volume=None, output_volume=None):
+        self._logger.debug("set_volume(%s, %s)" % (volume, output_volume))
         if volume is None:
             volume = output_volume
         if output_volume is None:
@@ -129,29 +133,37 @@ class Commands:
         self._client.send(self._id, CMD_SET_VOLUME, bytearray([volume, output_volume]))
 
     def get_input_source(self):
+        self._logger.debug("get_input_source")
         response = self._client.send(self._id, CMD_GET_INPUT_SOURCE)
         if response:
             return [b for b in response]
 
     def set_input_source(self, input_type=0, input_number=0, osd_style=0, reserved=0):
+        self._logger.debug("set_input_source(%s, %s, %s, %s)" % (input_type, input_number, osd_style, reserved))
         self._client.send(self._id, CMD_SET_INPUT_SOURCE, bytearray([input_type, input_number, osd_style, reserved]))
 
     def get_osc_implementation_version(self):
+        self._logger.debug("get_osc_implementation_version")
         return self._get_string(CMD_GET_VERSION, bytes(VERSION_INFO_OTSC_IMPLEMENTATION_VERSION))
 
     def get_platform_label(self):
+        self._logger.debug("get_platform_label")
         return self._get_string(CMD_GET_VERSION, bytes(VERSION_INFO_PLATFORM_LABEL))
 
     def get_platform_version(self):
+        self._logger.debug("get_platform_version")
         return self._get_string(CMD_GET_VERSION, bytes(VERSION_INFO_PLATFORM_VERSION))
 
     def get_model_number(self):
+        self._logger.debug("get_model_number")
         return self._get_string(CMD_GET_INFO, bytes(MODEL_INFO_MODEL_NUMBER))
 
     def get_fw_version(self):
+        self._logger.debug("get_fw_version")
         return self._client.send(CMD_GET_INFO, bytes(MODEL_INFO_FW_VERSION))
 
     def get_build_date(self):
+        self._logger.debug("get_build_date")
         return self._client.send(CMD_GET_INFO, bytes(MODEL_INFO_BUILD_DATE))
 
     def _get_string(self, cmd, data):
@@ -160,6 +172,7 @@ class Commands:
             return response.decode('utf-8')
 
     def ir_command(self, code):
+        self._logger.debug("ir_command(%s)" % binascii.hexlify(code))
         self._client.send(self._id, CMD_IR, code)
 
     def disconnect(self):

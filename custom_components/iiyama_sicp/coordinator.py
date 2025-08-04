@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import async_timeout
-import asyncio
 import getmac
 import logging
 import socket
@@ -97,10 +96,8 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
                 result.state = self._api_commands.get_power_state()
                 _LOGGER.debug(f"Got state: {result.state}")
             except socket.error as e:
-                result.state = False
                 _LOGGER.debug(f"Failed to get state: {e}")
-                self._api_client.close()
-                return result
+                raise e
 
             # await asyncio.sleep(.5)
             source_ = self._api_commands.get_input_source()[0]
@@ -112,11 +109,12 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
             result.volume_level = self._api_commands.get_volume()[0] / 100.0
 
         except socket.error as e:
+            _LOGGER.error(f"Socket error during update of the device status: {e}")
             result.state = False
             self._api_client.close()
-            return result
         except Exception as err:
             self._api_client.close()
+            _LOGGER.error(f"Failed to update the device status: {err}")
             raise UpdateFailed(f"Error communicating with API: {err}")
         return result
 
@@ -124,13 +122,29 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         if not self.data:
             self.data = SicpData()
         if not self.data.model_id:
-            self.data.model_id = self._api_commands.get_model_number()
+            try:
+                self.data.model_id = self._api_commands.get_model_number()
+            except Exception as e:
+                _LOGGER.debug(f"Failed to get model ID: {e}")
+                self.data.model_id = "Unknown"
         if (not self.data.model) and self.data.model_id:
-            self.data.model = self.data.model_id
+            try:
+                self.data.model = self.data.model_id
+            except Exception as e:
+                _LOGGER.debug(f"Failed to get model name: {e}")
+                self.data.model = "Unknown"
         if not self.data.hw_version:
-            self.data.hw_version = self._api_commands.get_fw_version()
+            try:
+                self.data.hw_version = self._api_commands.get_fw_version()
+            except Exception as e:
+                _LOGGER.debug(f"Failed to get hardware version: {e}")
+                self.data.hw_version = "Unknown"
         if not self.data.sw_version:
-            self.data.sw_version = self._api_commands.get_platform_version()
+            try:
+                self.data.sw_version = self._api_commands.get_platform_version()
+            except Exception as e:
+                _LOGGER.debug(f"Failed to get software version: {e}")
+                self.data.sw_version = "Unknown"
 
     async def _setup_mac(self):
         try:

@@ -12,6 +12,6 @@
 	"requirements": [
 		"getmac",
 		"wakeonlan",
-		"pyamasicp"
+		"pyamasicp>=0.3.0"
 	]
 }

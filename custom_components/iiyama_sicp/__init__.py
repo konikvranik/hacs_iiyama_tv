@@ -45,7 +45,7 @@ CONFIG_SCHEMA = vol.Schema({vol.Optional(DOMAIN): vol.Schema(SCHEMA)}, extra=ALL
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up ESPHome binary sensors based on a config entry."""
 
-    coordinator_ = SicpUpdateCoordinator(hass, config_entry, Client(config_entry.data.get(CONF_HOST)))
+    coordinator_ = SicpUpdateCoordinator(hass, config_entry, Client(config_entry.data.get(CONF_HOST), timeout=3))
     config_entry.runtime_data = {'coordinator': coordinator_}
     await coordinator_.async_config_entry_first_refresh()
 
@@ -55,7 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    config_entry.runtime_data['coordinator'].close()
+    await config_entry.runtime_data['coordinator'].async_shutdown()
     return await hass.config_entries.async_unload_platforms(config_entry, PLATFORMS)
 
 
@@ -63,6 +63,10 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
     """Migrate old entry."""
     data = {**config_entry.data}
     if not (CONF_MAC in data and data[CONF_MAC]):
-        data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
+        from functools import partial
+        mac = await hass.async_add_executor_job(
+            partial(getmac.get_mac_address, ip=data[CONF_HOST], hostname=data[CONF_HOST])
+        )
+        data[CONF_MAC] = mac
         hass.config_entries.async_update_entry(config_entry, data=data, minor_version=1, version=1)
     return True

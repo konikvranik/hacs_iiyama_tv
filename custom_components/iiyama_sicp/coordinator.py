@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import async_timeout
 import getmac
 import logging
@@ -64,7 +65,7 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         try:
             await self._setup_device_info()
         except Exception as err:
-            self._api_client.close()
+            await self.hass.async_add_executor_job(self._api_client.close)
 
     async def _async_update_data(self):
         """Fetch data from API endpoint.
@@ -91,29 +92,29 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         try:
             await self._setup_device_info()
 
-            # await asyncio.sleep(.5)
+            # Parallelize state, source, and volume reads to bound total latency
+            state_fut = self.hass.async_add_executor_job(self._api_commands.get_power_state)
+            source_fut = self.hass.async_add_executor_job(self._api_commands.get_input_source)
+            volume_fut = self.hass.async_add_executor_job(self._api_commands.get_volume)
             try:
-                result.state = self._api_commands.get_power_state()
+                result_state, source_bytes, volume_bytes = await asyncio.gather(state_fut, source_fut, volume_fut)
+                result.state = result_state
                 _LOGGER.debug(f"Got state: {result.state}")
+                source_ = source_bytes[0] if source_bytes else None
+                for k, v in INPUT_SOURCES.items():
+                    if source_ == v:
+                        result.input_source = k
+                result.volume_level = (volume_bytes[0] / 100.0) if volume_bytes else None
             except socket.error as e:
-                _LOGGER.debug(f"Failed to get state: {e}")
+                _LOGGER.debug(f"Failed to read device status: {e}")
                 raise e
 
-            # await asyncio.sleep(.5)
-            source_ = self._api_commands.get_input_source()[0]
-            for k, v in INPUT_SOURCES.items():
-                if source_ == v:
-                    result.input_source = k
-            # await asyncio.sleep(.5)
-
-            result.volume_level = self._api_commands.get_volume()[0] / 100.0
-
         except socket.error as e:
+            await self.hass.async_add_executor_job(self._api_client.close)
             _LOGGER.error(f"Socket error during update of the device status: {e}")
-            result.state = False
-            self._api_client.close()
+            raise UpdateFailed(f"Socket error: {e}")
         except Exception as err:
-            self._api_client.close()
+            await self.hass.async_add_executor_job(self._api_client.close)
             _LOGGER.error(f"Failed to update the device status: {err}")
             raise UpdateFailed(f"Error communicating with API: {err}")
         return result
@@ -123,7 +124,7 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
             self.data = SicpData()
         if not self.data.model_id:
             try:
-                self.data.model_id = self._api_commands.get_model_number()
+                self.data.model_id = await self.hass.async_add_executor_job(self._api_commands.get_model_number)
             except Exception as e:
                 _LOGGER.debug(f"Failed to get model ID: {e}")
                 self.data.model_id = "Unknown"
@@ -135,13 +136,13 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
                 self.data.model = "Unknown"
         if not self.data.hw_version:
             try:
-                self.data.hw_version = self._api_commands.get_fw_version()
+                self.data.hw_version = await self.hass.async_add_executor_job(self._api_commands.get_fw_version)
             except Exception as e:
                 _LOGGER.debug(f"Failed to get hardware version: {e}")
                 self.data.hw_version = "Unknown"
         if not self.data.sw_version:
             try:
-                self.data.sw_version = self._api_commands.get_platform_version()
+                self.data.sw_version = await self.hass.async_add_executor_job(self._api_commands.get_platform_version)
             except Exception as e:
                 _LOGGER.debug(f"Failed to get software version: {e}")
                 self.data.sw_version = "Unknown"
@@ -150,10 +151,13 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
         try:
             data = {**self.config_entry.data}
             if not (CONF_MAC in data and data[CONF_MAC]):
-                data[CONF_MAC] = getmac.get_mac_address(ip=data[CONF_HOST], hostname=data[CONF_HOST])
+                mac = await self.hass.async_add_executor_job(
+                    partial(getmac.get_mac_address, ip=data[CONF_HOST], hostname=data[CONF_HOST])
+                )
+                data[CONF_MAC] = mac
                 self.hass.config_entries.async_update_entry(self.config_entry, data=data, minor_version=1, version=1)
         except Exception as e:
-            self.logger.warning("Failed to get MAC address", exc_info=e)
+            _LOGGER.warning("Failed to get MAC address", exc_info=e)
 
     async def async_shutdown(self) -> None:
         await super().async_shutdown()

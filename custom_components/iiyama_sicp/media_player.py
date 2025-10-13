@@ -3,6 +3,7 @@ import inspect
 import logging
 import socket
 import uuid
+import re
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -65,15 +66,14 @@ class IiyamaSicpMediaPlayer(CoordinatorEntity[SicpUpdateCoordinator], MediaPlaye
         self._attr_device_info = device_info
         _LOGGER.debug("IiyamaSicpMediaPlayer.__init__(%s, %s, %s, %s)" % (name, host, mac, broadcast_address))
         self.hass = hass
-        self._mac_addresses = mac.split(r'[\s,;]')
+        self._mac_addresses = re.split(r"[\s,;]+", mac) if mac else []
         self._broadcast_port = broadcast_port
         self._broadcast_address = broadcast_address
-        self._client = Commands(Client(host))
+        # Removed unused per-entity client; all operations go through the coordinator
         self._attr_name = name
         self._attr_unique_id = f"iiyama_sicp_{host}_{mac}"
         self._host = host
         self._mac = mac
-        self._attr_unique_id = mac if mac else str(uuid.uuid4())
 
         self._attr_supported_features |= MediaPlayerEntityFeature.VOLUME_STEP
         self._attr_supported_features |= MediaPlayerEntityFeature.VOLUME_SET

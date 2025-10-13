@@ -1,5 +1,5 @@
 {
-	"version": "0.4.17",
+	"version": "0.4.18",
 	"domain": "iiyama_sicp",
 	"name": "iiyama TV rs232 over LAN Media Player",
 	"codeowners": [
@@ -12,6 +12,6 @@
 	"requirements": [
 		"getmac",
 		"wakeonlan",
-		"pyamasicp>=0.3.1"
+		"pyamasicp==0.3.2"
 	]
 }

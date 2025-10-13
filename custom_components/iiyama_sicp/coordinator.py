@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 import async_timeout
+import asyncio
 import getmac
 import logging
 import socket
@@ -12,8 +12,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_MAC, CONF_HOST
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from custom_components.iiyama_sicp.pyamasicp.client import Client
-from custom_components.iiyama_sicp.pyamasicp.commands import INPUT_SOURCES, Commands
+from pyamasicp.client import Client
+from pyamasicp.commands import INPUT_SOURCES, Commands
 
 _LOGGER = logging.getLogger(__name__)
 

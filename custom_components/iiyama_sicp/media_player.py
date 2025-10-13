@@ -1,11 +1,9 @@
 """ mqtt-mediaplayer """
+import homeassistant.helpers.config_validation as cv
 import inspect
 import logging
-import socket
-import uuid
 import re
-
-import homeassistant.helpers.config_validation as cv
+import socket
 import voluptuous as vol
 import wakeonlan
 from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity, MediaPlayerEntityFeature, \
@@ -20,9 +18,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from custom_components.iiyama_sicp import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT, SicpUpdateCoordinator
-from custom_components.iiyama_sicp.pyamasicp.client import Client
-from custom_components.iiyama_sicp.pyamasicp.commands import INPUT_SOURCES, Commands
+from . import CONF_WOL_TARGET, DOMAIN, CONF_WOL_PORT, SicpUpdateCoordinator
+from pyamasicp.commands import INPUT_SOURCES
 
 # SCAN_INTERVAL = timedelta(minutes=1)
 _LOGGER = logging.getLogger(__name__)

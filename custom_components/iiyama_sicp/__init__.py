@@ -1,18 +1,17 @@
+import getmac
+import homeassistant.helpers.config_validation as cv
 import json
 import logging
 import os
 import typing
-
-import getmac
-import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_NAME, CONF_FORCE_UPDATE, CONF_HOST, CONF_MAC, Platform, CONF_DOMAIN)
 from homeassistant.core import HomeAssistant
 from voluptuous import ALLOW_EXTRA
 
-from custom_components.iiyama_sicp.coordinator import SicpUpdateCoordinator
-from custom_components.iiyama_sicp.pyamasicp.client import Client
+from .coordinator import SicpUpdateCoordinator
+from pyamasicp.client import Client
 
 CONF_WOL_TARGET: typing.Final = "wol_target"
 CONF_WOL_PORT: typing.Final = "wol_port"

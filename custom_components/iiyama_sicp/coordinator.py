@@ -109,9 +109,13 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
                 _LOGGER.debug(f"Failed to read device status: {e}")
                 raise e
 
+        except socket.timeout as e:
+            await self.hass.async_add_executor_job(self._api_client.close)
+            _LOGGER.debug(f"Socket timeout during update of the device status: {e}")
+            raise UpdateFailed(f"Socket timeout: {e}")
         except socket.error as e:
             await self.hass.async_add_executor_job(self._api_client.close)
-            _LOGGER.debug(f"Socket error during update of the device status: {e}")
+            _LOGGER.error(f"Socket error during update of the device status: {e}")
             raise UpdateFailed(f"Socket error: {e}")
         except Exception as err:
             await self.hass.async_add_executor_job(self._api_client.close)

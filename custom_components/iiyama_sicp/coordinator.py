@@ -111,7 +111,7 @@ class SicpUpdateCoordinator(DataUpdateCoordinator[SicpData]):
 
         except socket.error as e:
             await self.hass.async_add_executor_job(self._api_client.close)
-            _LOGGER.error(f"Socket error during update of the device status: {e}")
+            _LOGGER.debug(f"Socket error during update of the device status: {e}")
             raise UpdateFailed(f"Socket error: {e}")
         except Exception as err:
             await self.hass.async_add_executor_job(self._api_client.close)
